@@ -1,0 +1,696 @@
+{
+  "name": "48-Hour Newsletter Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "message"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0AGC0EKE2W",
+          "mode": ""
+        },
+        "options": {}
+      },
+      "id": "174a85db-7b7a-4894-8db5-410dcddf236d",
+      "name": "Slack Trigger",
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -296512,
+        86048
+      ],
+      "webhookId": "slack-webhook-id",
+      "credentials": {
+        "slackApi": {
+          "id": "99YAuDH5bmKUNXH0",
+          "name": "Newsletter_Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.bot_id }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "ec653a6a-8c4c-497c-a497-b97c8675d4c7",
+      "name": "Is Human Message?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -296272,
+        86048
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gnews.io/api/v4/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=q",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "lang",
+              "value": "en"
+            },
+            {
+              "name": "from",
+              "value": "={{ $json.gnewsFrom }}"
+            },
+            {
+              "name": "max",
+              "value": "10"
+            },
+            {
+              "name": "token",
+              "value": "5f19be2acc3b1e641768f89b139626df"
+            },
+            {
+              "name": "pexels",
+              "value": "={{ $json.keywords.pexels }}"
+            },
+            {
+              "name": "Category",
+              "value": "={{ $json.category }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5a4935fc-d87a-4c42-b1e6-7c9a19617670",
+      "name": "Fetch GNews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -295504,
+        85728
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://content.guardianapis.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "from-date",
+              "value": "={{ $json.guardianFrom }}"
+            },
+            {
+              "name": "lang",
+              "value": "en"
+            },
+            {
+              "name": "show-fields",
+              "value": "headline,trailText,byline,thumbnail"
+            },
+            {
+              "name": "page-size",
+              "value": "10"
+            },
+            {
+              "name": "api-key",
+              "value": "f0ff0a7d-bc53-451d-92cd-ba1908f3a89e"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f6cc4cc4-95fd-44e4-8ca1-f0d49d5bb588",
+      "name": "Fetch The Guardian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -295504,
+        85936
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "647076d8-d80d-41bf-b9e3-8fb48ab29a71",
+      "name": "Merge GNews + NewsAPI",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -295120,
+        85808
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7bdb07b5-8e91-4f9c-9c4d-2d4a63f86fc1",
+      "name": "Merge Guardian + Pexels",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -295120,
+        86048
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "614806f8-7ae3-4b0c-9af6-491af5ec2f95",
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -294880,
+        85936
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.articleCount }}",
+              "operation": "notEqual",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "id": "a0c5c959-fdd4-4d42-a6cf-211b30b6f091",
+      "name": "Articles Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -294368,
+        86112
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "=C0AGC0EKE2W",
+          "mode": "id"
+        },
+        "text": "⚠️ *No Articles Found*\n\nNo {{ $json.category }} news articles were found in the last 48 hours. Please try again later.",
+        "otherOptions": {}
+      },
+      "id": "ce0efec3-21cd-4436-9a3a-b20081294b48",
+      "name": "Slack Error - No Articles",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [
+        -293936,
+        86512
+      ],
+      "webhookId": "5fda1603-d381-4a26-b7ef-1c4c1072a464",
+      "credentials": {
+        "slackApi": {
+          "id": "99YAuDH5bmKUNXH0",
+          "name": "Newsletter_Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.pexelsKeyword }}"
+            },
+            {
+              "name": "per_page",
+              "value": "3"
+            },
+            {
+              "name": "orientation",
+              "value": "landscape"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "VDJjB68Ky4LfHzF8PFT9TNK7lUJg6ckfTkhCYfJQ17fCcxTSj7Cys4mj"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c8c97b77-920b-4724-b90a-cec9d02cf5a7",
+      "name": "Fetch Pexels Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -295504,
+        86208
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an expert newsletter editor and professional HTML email designer.\n\nSTRICT RULES:\n- Use ONLY the articles provided. Never invent facts, quotes, or statistics.\n- Output ONLY valid HTML. No markdown, no explanation, no backticks.\n- All CSS must be inline. No external stylesheets.\n- Newsletter must be mobile responsive with max-width 680px.\n\nDESIGN REQUIREMENTS:\n- Gradient header: background: linear-gradient(135deg, #1a1a2e, #0f3460)\n- Category badge below header title\n- Hero image full width below header\n- Highlight box showing top trend or insight across articles\n- Each article as a clean card with: title, source, date, summary\n- Section image between article groups\n- Professional typography using system fonts\n- Color scheme: #1a1a2e, #16213e, #0f3460, #e94560, #ffffff\n- Sources reference section at bottom\n- Footer with CTA: \"Stay Informed. Stay Ahead.\"\n\nOUTPUT: Return only the complete HTML document. Nothing else.",
+              "role": "system"
+            },
+            {
+              "content": "=Generate a professional HTML newsletter for the following:\n\nCategory: {{ $json.category }}\n\nArticles:\n{{ JSON.stringify($json.articles) }}\n\nImages:\n- Hero Image URL: {{ $json.images.hero.url }}\n- Section 1 Image URL: {{ $json.images.section1.url }}\n- Section 2 Image URL: {{ $json.images.section2.url }}\n\nEmail recipient: {{ $json.email }}\n\nInstructions:\n- Use ALL articles provided\n- Embed the hero image at the top\n- Embed section images between article groups\n- Highlight the most important trend you see across articles\n- Include publication date for each article\n- Include source name for each article\n- Make it visually stunning and professional"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.7
+        }
+      },
+      "id": "8bc843d6-f18e-446e-95a1-1fc5a91e529e",
+      "name": "LLM Generate Newsletter",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        -294064,
+        86016
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "nXtVlTyuiLM9OZDD",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "jeyaalagappan@gmail.com",
+        "subject": "={{`AI Intelligence Brief — What Matters Today | ${$now.toFormat('MMM d, yyyy')}`}}",
+        "message": "=<!DOCTYPE html>\n<html>\n<body style=\"margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; background-color:#f4f6f8;\">\n\n  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:720px; margin:0 auto; background-color:#ffffff;\">\n    \n    <!-- Header Intro Section -->\n    <tr>\n      <td style=\"padding:30px 30px 10px 30px;\">\n        <p style=\"font-size:16px; color:#333333; margin:0 0 15px 0;\">\n          Hello,\n        </p>\n\n        <p style=\"font-size:15px; line-height:1.6; color:#555555; margin:0 0 15px 0;\">\n          Please find below your latest <strong>AI-Generated Intelligence Brief</strong>, \n          highlighting the most significant developments from the past 48 hours.\n        </p>\n\n        <p style=\"font-size:15px; line-height:1.6; color:#555555; margin:0 0 25px 0;\">\n          This report is compiled using real-time data from multiple trusted news sources \n          and curated through advanced AI analysis to deliver concise, relevant insights.\n        </p>\n\n        <hr style=\"border:none; border-top:1px solid #e0e0e0; margin:20px 0;\">\n      </td>\n    </tr>\n\n    <!-- Newsletter Content Section -->\n    <tr>\n      <td style=\"padding:0 30px 30px 30px;\">\n        {{$json.html}}\n\n\n      </td>\n    </tr>\n\n    <!-- Footer -->\n    <tr>\n      <td style=\"background-color:#f4f6f8; padding:20px 30px; text-align:left;\">\n        <p style=\"font-size:14px; color:#777777; margin:0;\">\n          Best regards,<br>\n          <strong>Your Automated Intelligence Desk</strong>\n        </p>\n      </td>\n    </tr>\n\n  </table>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "a50af0e1-79a6-4b48-9b07-1647ac5fb4b9",
+      "name": "Send Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        -293280,
+        86016
+      ],
+      "webhookId": "03f1e890-ff55-435a-ab21-46cefea2c0c9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "4QNkOW7h6fnBrCbt",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// CALCULATE 48H WINDOW\n// Saves everything to static data\n// so HTTP nodes cannot lose it\n// ============================================\n\nconst rawInput    = $input.first().json;\nconst rawCategory = rawInput.category || '';\nconst catTrimmed  = rawCategory.trim();\nconst catLower    = catTrimmed.toLowerCase();\nconst email       = rawInput.email || 'jeyaalagappan@gmail.com';\n\nconsole.log('Input category:', rawCategory);\nconsole.log('Input text:', rawInput.text);\n\n// ============================================\n// NORMALIZE CATEGORY\n// ============================================\nlet cat = '';\n\nif (catLower === 'sports' || catLower === 'sport') {\n  cat = 'Sports';\n} else if (\n  catLower === 'artificial intelligence' ||\n  catLower === 'ai'\n) {\n  cat = 'Artificial Intelligence';\n} else if (\n  catLower === 'geopolitics' ||\n  catLower === 'geo'         ||\n  catLower === 'world'\n) {\n  cat = 'Geopolitics';\n} else {\n  // Try from raw text field directly\n  const textLower = (rawInput.text || '').toLowerCase().trim();\n  if (textLower.includes('sport'))                                    cat = 'Sports';\n  else if (textLower.includes('ai') || textLower.includes('artif'))  cat = 'Artificial Intelligence';\n  else if (textLower.includes('geo') || textLower.includes('world')) cat = 'Geopolitics';\n  else cat = catTrimmed;\n}\n\nconsole.log('Normalized category:', cat);\n\n// ============================================\n// TIME WINDOW\n// ============================================\nconst now      = new Date();\nconst minus48h = new Date(now.getTime() - 48 * 60 * 60 * 1000);\n\nconst iso48h       = minus48h.toISOString();\nconst gnewsFrom    = iso48h.split('.')[0];\nconst guardianFrom = minus48h.toISOString().split('T')[0];\nconst newsapiFrom  = minus48h.toISOString().split('T')[0];\n\n// ============================================\n// KEYWORD MAP\n// ============================================\nconst categoryMap = {\n  'Geopolitics': {\n    gnews:           'geopolitics',\n    newsapi:         'geopolitics world politics',\n    guardianSection: 'world',\n    guardian:        'geopolitics world politics',\n    pexels:          'world politics globe'\n  },\n  'Sports': {\n    gnews:           'sports',\n    newsapi:         'sports',\n    guardianSection: 'sport',\n    guardian:        'sport',\n    pexels:          'sports stadium action'\n  },\n  'Artificial Intelligence': {\n    gnews:           'artificial intelligence',\n    newsapi:         'artificial intelligence',\n    guardianSection: 'technology',\n    guardian:        'artificial intelligence',\n    pexels:          'artificial intelligence technology'\n  }\n};\n\nconst keywords = categoryMap[cat] || {\n  gnews:           cat,\n  newsapi:         cat,\n  guardianSection: 'world',\n  guardian:        cat,\n  pexels:          cat + ' news'\n};\n\nconst gnewsKeyword    = keywords.gnews;\nconst newsapiKeyword  = keywords.newsapi;\nconst guardianSection = keywords.guardianSection;\nconst guardianKeyword = keywords.guardian;\nconst pexelsKeyword   = keywords.pexels;\n\nconsole.log('Keywords set - pexels:', pexelsKeyword);\n\n// ============================================\n// SAVE TO STATIC DATA\n// HTTP nodes eat input data\n// Static data survives everything\n// ============================================\nconst staticData              = $getWorkflowStaticData('global');\nstaticData.category           = cat;\nstaticData.email              = email;\nstaticData.pexelsKeyword      = pexelsKeyword;\nstaticData.cutoffTimestamp    = minus48h.getTime();\nstaticData.gnewsFrom          = gnewsFrom;\nstaticData.guardianFrom       = guardianFrom;\nstaticData.newsapiFrom        = newsapiFrom;\nstaticData.gnewsKeyword       = gnewsKeyword;\nstaticData.newsapiKeyword     = newsapiKeyword;\nstaticData.guardianSection    = guardianSection;\nstaticData.guardianKeyword    = guardianKeyword;\n\nconsole.log('Saved to static data:');\nconsole.log('  category:', staticData.category);\nconsole.log('  pexelsKeyword:', staticData.pexelsKeyword);\nconsole.log('  cutoffTimestamp:', new Date(staticData.cutoffTimestamp).toISOString());\n\n// ============================================\n// RETURN FOR HTTP NODES\n// ============================================\nreturn [{\n  json: {\n    ...rawInput,\n    category:        cat,\n    email,\n    now:             now.toISOString(),\n    from48h:         iso48h,\n    gnewsFrom,\n    guardianFrom,\n    newsapiFrom,\n    cutoffTimestamp: minus48h.getTime(),\n    keywords,\n    gnewsKeyword,\n    newsapiKeyword,\n    guardianSection,\n    guardianKeyword,\n    pexelsKeyword\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -296032,
+        86048
+      ],
+      "id": "2d898691-998c-4b26-b154-5bd9331211c1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.newsapiKeyword }}"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "from",
+              "value": "={{ $json.newsapiFrom }}"
+            },
+            {
+              "name": "apiKey",
+              "value": "d727894b5751413cae6019d66d6d212a"
+            },
+            {
+              "name": "pageSize",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "0f651470-70eb-488d-be16-7156301f297d",
+      "name": "Fetch NewsApi",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -295504,
+        85536
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// NORMALIZE & DEDUPLICATE\n// Uses global static data for metadata\n// No need to search inputs for category\n// ============================================\n\nconst allInputs = $input.all();\nconsole.log('Total inputs:', allInputs.length);\n\n// ============================================\n// STEP 1 - READ FROM GLOBAL STATIC DATA\n// Single source of truth for all metadata\n// Always available regardless of HTTP nodes\n// ============================================\nconst staticData      = $getWorkflowStaticData('global');\nconst category        = staticData.category        || '';\nconst email           = staticData.email           || 'jeyaalagappan@gmail.com';\nconst cutoffTimestamp = staticData.cutoffTimestamp || (Date.now() - 48 * 3600 * 1000);\nconst pexelsKeyword   = staticData.pexelsKeyword   || '';\n\nconsole.log('category:', category);\nconsole.log('email:', email);\nconsole.log('pexelsKeyword:', pexelsKeyword);\nconsole.log('cutoff:', new Date(cutoffTimestamp).toISOString());\n\n// ============================================\n// STEP 2 - IDENTIFY EACH API INPUT\n// Pexels  → { photos: [] }\n// Guardian→ { response: { results: [] } }\n// NewsAPI → { articles: [{ urlToImage }] }\n// GNews   → { articles: [{ image }] }\n// ============================================\nlet gnewsRaw     = [];\nlet newsapiRaw   = [];\nlet guardianRaw  = [];\nlet pexelsPhotos = [];\n\nfor (const input of allInputs) {\n  const j     = input?.json || {};\n  const first = j.articles?.[0] || {};\n\n  if (j.photos && Array.isArray(j.photos)) {\n    pexelsPhotos = j.photos;\n    console.log('Found Pexels:', pexelsPhotos.length);\n\n  } else if (j.response && j.response.results) {\n    guardianRaw = j.response.results;\n    console.log('Found Guardian:', guardianRaw.length);\n\n  } else if (j.articles && Array.isArray(j.articles)) {\n    if (\n      first.urlToImage !== undefined ||\n      first.source?.id !== undefined\n    ) {\n      newsapiRaw = j.articles;\n      console.log('Found NewsAPI:', newsapiRaw.length);\n    } else {\n      gnewsRaw = j.articles;\n      console.log('Found GNews:', gnewsRaw.length);\n    }\n  }\n}\n\n// ============================================\n// STEP 3 - PROCESS PEXELS IMAGES\n// ============================================\nconst fallbackImg = {\n  url:          'https://placehold.co/800x400/1a1a2e/ffffff?text=' +\n                 encodeURIComponent(category || 'Newsletter'),\n  alt:          category + ' Newsletter',\n  photographer: ''\n};\n\nconst pexelsImages = pexelsPhotos.map(p => ({\n  url:          p.src?.large || p.src?.medium || '',\n  alt:          p.alt        || category,\n  photographer: p.photographer || ''\n}));\n\nconst images = {\n  hero:     pexelsImages[0] || fallbackImg,\n  section1: pexelsImages[1] || fallbackImg,\n  section2: pexelsImages[2] || fallbackImg\n};\n\nconsole.log('Hero:', images.hero.url);\nconsole.log('Section1:', images.section1.url);\nconsole.log('Section2:', images.section2.url);\n\n// ============================================\n// STEP 4 - NORMALIZE GNEWS\n// ============================================\nconst gnewsNorm = gnewsRaw.map(a => ({\n  title:       a.title        || '',\n  description: a.description  || '',\n  url:         a.url          || '',\n  publishedAt: a.publishedAt  || '',\n  source:      a.source?.name || 'GNews',\n  image:       a.image        || null,\n  timestamp:   new Date(a.publishedAt || 0).getTime()\n}));\n\n// ============================================\n// STEP 5 - NORMALIZE NEWSAPI\n// ============================================\nconst newsapiNorm = newsapiRaw.map(a => ({\n  title:       a.title        || '',\n  description: a.description  || '',\n  url:         a.url          || '',\n  publishedAt: a.publishedAt  || '',\n  source:      a.source?.name || 'NewsAPI',\n  image:       a.urlToImage   || null,\n  timestamp:   new Date(a.publishedAt || 0).getTime()\n}));\n\n// ============================================\n// STEP 6 - NORMALIZE GUARDIAN\n// ============================================\nconst guardianNorm = guardianRaw.map(a => ({\n  title:       a.webTitle           || '',\n  description: a.fields?.trailText  || '',\n  url:         a.webUrl             || '',\n  publishedAt: a.webPublicationDate || '',\n  source:      'The Guardian',\n  image:       a.fields?.thumbnail  || null,\n  timestamp:   new Date(a.webPublicationDate || 0).getTime()\n}));\n\nconsole.log('GNews normalized:', gnewsNorm.length);\nconsole.log('NewsAPI normalized:', newsapiNorm.length);\nconsole.log('Guardian normalized:', guardianNorm.length);\n\n// ============================================\n// STEP 7 - MERGE NEWS ARTICLES\n// ============================================\nlet all = [...gnewsNorm, ...newsapiNorm, ...guardianNorm];\nconsole.log('Total merged:', all.length);\n\n// ============================================\n// STEP 8 - FILTER 48 HOURS\n// ============================================\nall = all.filter(a => {\n  const valid = a.timestamp >= cutoffTimestamp;\n  if (!valid) console.log('Removed old:', a.publishedAt, a.title?.slice(0, 30));\n  return valid;\n});\nconsole.log('After 48h filter:', all.length);\n\n// ============================================\n// STEP 9 - DEDUPLICATE BY URL\n// ============================================\nconst seen = new Set();\nall = all.filter(a => {\n  if (!a.url || seen.has(a.url)) return false;\n  seen.add(a.url);\n  return true;\n});\nconsole.log('After dedupe:', all.length);\n\n// ============================================\n// STEP 10 - CLEAN BAD ARTICLES\n// ============================================\nall = all.filter(a =>\n  a.title                 &&\n  a.title !== '[Removed]' &&\n  a.title !== 'null'      &&\n  a.title.trim() !== ''   &&\n  a.url                   &&\n  a.url.trim() !== ''\n);\nconsole.log('After clean:', all.length);\n\n// ============================================\n// STEP 11 - SORT NEWEST FIRST\n// ============================================\nall.sort((a, b) => b.timestamp - a.timestamp);\n\n// ============================================\n// STEP 12 - TOP 10\n// ============================================\nall = all.slice(0, 10);\nconsole.log('Final count:', all.length);\n\n// ============================================\n// STEP 13 - NO ARTICLES FOUND\n// ============================================\nif (all.length === 0) {\n  return [{\n    json: {\n      error:        'NO_ARTICLES',\n      articleCount: 0,\n      category,\n      email,\n      pexelsKeyword,\n      images,\n      diagnostic: {\n        gnewsCount:    gnewsNorm.length,\n        newsapiCount:  newsapiNorm.length,\n        guardianCount: guardianNorm.length,\n        pexelsCount:   pexelsPhotos.length,\n        cutoffTime:    new Date(cutoffTimestamp).toISOString()\n      }\n    }\n  }];\n}\n\n// ============================================\n// STEP 14 - RETURN EVERYTHING\n// Articles + Images + Category\n// Ready for LLM directly\n// ============================================\nconsole.log('SUCCESS:', all.length, 'articles | category:', category);\n\nreturn [{\n  json: {\n    articles:     all,\n    articleCount: all.length,\n    category,\n    email,\n    pexelsKeyword,\n    images,\n    sources: {\n      gnews:    gnewsNorm.length,\n      newsapi:  newsapiNorm.length,\n      guardian: guardianNorm.length,\n      pexels:   pexelsPhotos.length\n    },\n    debug: {\n      cutoffTime:   new Date(cutoffTimestamp).toISOString(),\n      totalFetched: gnewsNorm.length + newsapiNorm.length + guardianNorm.length,\n      finalCount:   all.length,\n      category,\n      pexelsKeyword,\n      heroImage:    images.hero.url\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -294640,
+        85936
+      ],
+      "id": "4e8d9941-dc8c-4067-b07c-f7e5cb7590b3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// CREATE HTML ATTACHMENT\n// Reads category/email from static data\n// No node name references\n// ============================================\n\nconst llmOutput = $input.first().json;\n\n// ============================================\n// STEP 1 - EXTRACT HTML FROM LLM RESPONSE\n// Different OpenAI node versions return\n// html in different places\n// ============================================\nconst html =\n  llmOutput?.message?.content               ||\n  llmOutput?.choices?.[0]?.message?.content ||\n  llmOutput?.text                            ||\n  llmOutput?.content                         ||\n  '';\n\nconsole.log('HTML length:', html.length);\nconsole.log('First 50 chars:', html.slice(0, 50));\n\n// ============================================\n// STEP 2 - VALIDATE HTML\n// ============================================\nif (!html || html.length < 100) {\n  return [{\n    json: {\n      error:     'LLM_FAILED',\n      message:   'LLM returned empty or invalid HTML',\n      rawLength: html.length,\n      raw:       JSON.stringify(llmOutput).slice(0, 200)\n    }\n  }];\n}\n\n// ============================================\n// STEP 3 - CLEAN HTML\n// Remove accidental markdown backticks\n// ============================================\nconst cleanHtml = html\n  .replace(/```html/gi, '')\n  .replace(/```/g, '')\n  .trim();\n\nconsole.log('Clean HTML length:', cleanHtml.length);\nconsole.log('Starts correctly:', cleanHtml.startsWith('<!DOCTYPE') || cleanHtml.startsWith('<html'));\n\n// ============================================\n// STEP 4 - READ METADATA FROM STATIC DATA\n// No node name references needed\n// ============================================\nconst staticData = $getWorkflowStaticData('global');\nconst category   = staticData.category || '';\nconst email      = staticData.email    || 'jeyaalagappan@gmail.com';\n\nconsole.log('Category:', category);\nconsole.log('Email:', email);\n\n// ============================================\n// STEP 5 - GENERATE FILENAME\n// ============================================\nconst filename = `newsletter_${category.replace(/\\s+/g, '_')}_${Date.now()}.html`;\n\nconsole.log('Filename:', filename);\n\n// ============================================\n// STEP 6 - CONVERT TO BASE64\n// ============================================\nconst base64 = Buffer.from(cleanHtml).toString('base64');\n\nconsole.log('Base64 length:', base64.length);\n\n// ============================================\n// STEP 7 - RETURN HTML + BINARY ATTACHMENT\n// ============================================\nreturn [{\n  json: {\n    email,\n    category,\n    filename,\n    html:       cleanHtml,\n    htmlLength: cleanHtml.length,\n    success:    true\n  },\n  binary: {\n    attachment: {\n      data:     base64,\n      mimeType: 'text/html',\n      fileName: filename\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -293680,
+        86016
+      ],
+      "id": "ef3df9c5-6d43-47cd-817b-8c92826e32a3",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "=C0AGC0EKE2W",
+          "mode": "id"
+        },
+        "text": "❌ *Email Delivery Failed*\n\nThe newsletter was generated but could not be sent. Please check Gmail credentials and try again.",
+        "otherOptions": {}
+      },
+      "id": "811c030d-57e0-4597-ace7-d9fca8b412bd",
+      "name": "Slack Error - Gmail Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [
+        -292800,
+        86224
+      ],
+      "webhookId": "c6c25c87-b38f-4543-a1db-cc48c5f2afdb",
+      "credentials": {
+        "slackApi": {
+          "id": "99YAuDH5bmKUNXH0",
+          "name": "Newsletter_Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "=C0AGC0EKE2W",
+          "mode": "id"
+        },
+        "text": "✅ *Newsletter Delivered!*\n",
+        "otherOptions": {}
+      },
+      "id": "d5154bd0-f11f-479b-904f-b624b659c9d5",
+      "name": "Slack Success Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [
+        -292832,
+        85904
+      ],
+      "webhookId": "8e1a497a-3212-42e2-b7bb-dbbfada98e1d",
+      "credentials": {
+        "slackApi": {
+          "id": "99YAuDH5bmKUNXH0",
+          "name": "Newsletter_Slack"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Human Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Human Message?": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Fetch NewsApi",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch GNews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch The Guardian",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Pexels Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch NewsApi": {
+      "main": [
+        [
+          {
+            "node": "Merge GNews + NewsAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch GNews": {
+      "main": [
+        [
+          {
+            "node": "Merge GNews + NewsAPI",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Fetch The Guardian": {
+      "main": [
+        [
+          {
+            "node": "Merge Guardian + Pexels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pexels Images": {
+      "main": [
+        [
+          {
+            "node": "Merge Guardian + Pexels",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge GNews + NewsAPI": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Guardian + Pexels": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Articles Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Articles Found?": {
+      "main": [
+        [
+          {
+            "node": "LLM Generate Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Error - No Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Generate Newsletter": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail": {
+      "main": [
+        [
+          {
+            "node": "Slack Success Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Error - Gmail Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "74b03236-64c4-409f-a09f-af093a00e41f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "620f216b1707bec7237ee5814815ce04bd54f040391c03b7be41c9a88e7b4b31"
+  },
+  "id": "JL3CZq7nyZr4REjK",
+  "tags": []
+}
