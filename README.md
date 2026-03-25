@@ -162,17 +162,6 @@ The workflow ships with built-in keyword mappings for three categories, but acce
 6. **Activate the workflow** — Toggle the workflow to *Active*. Send a message like `AI` or `Sports` in your Slack channel and watch the magic happen.
 
 ---
-
-## Customization
-
-- **Add more categories** — Extend the `categoryMap` object inside the *Code in JavaScript* node with new keyword sets.
-- **Change article count** — Modify the `max` / `pageSize` / `page-size` parameters in each HTTP node, and the `.slice(0, 10)` cap in the normalization code.
-- **Adjust the time window** — The `48 * 60 * 60 * 1000` calculation in the first Code node controls the lookback period.
-- **Restyle the newsletter** — Edit the system prompt in the *LLM Generate Newsletter* node to change colors, layout, or design tokens.
-- **Swap the LLM** — Replace GPT-4o-mini with any OpenAI-compatible model by changing the `modelId` in the LLM node.
-
----
-
 ## Error Handling
 
 The workflow includes three Slack notification paths:
